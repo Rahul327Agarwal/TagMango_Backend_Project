@@ -1,1 +1,1 @@
-web: node ./SMTP.js
+web: node ./server.js
