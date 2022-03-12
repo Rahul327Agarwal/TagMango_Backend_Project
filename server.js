@@ -15,20 +15,21 @@ app.post("/",async (req,res)=>{
     
     let to=req.body.email;
     let time=req.body.time;
-    console.log(time)
     let subject=req.body.subject; 
 
-
+    // if we have to send the mail immediately.
     if(time=="now")
     {
         sendthemail(to,subject);
     }
+    // if we have to send the mail after few hours.
     else if(time.includes("hour later"))
     {
         let val=+time.replace(" hour later","").trim();
         setTimeout(()=>sendthemail(to,subject),val*3600*1000)
 
     }
+    // if we have to send the mail at specific date and time.
     else 
     {
         let abs = getTimeInMs(time)
