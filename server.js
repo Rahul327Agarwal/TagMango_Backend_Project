@@ -1,26 +1,21 @@
 const express=require("express");
-const nodemailer = require('nodemailer');
-
-//nodemailer settings.
-const transporter = nodemailer.createTransport({
-    host: 'smtp.mailtrap.io',
-    port: 587,
-    secure: false,
-    requireTLS:true,
-    auth: {
-        user: '2ce6baec7326e0',
-        pass: '2b5e321dbcdb25'
-    }
-});
+const transporter = require('./mailtrap_credential');
+const sendthemail = require('./sendmail');
 
 const app=express();
 
 app.use(express.json());
 
+app.get("/",(req,res)=>
+{
+    res.status(201).send("You are successfully connected with Mailtrap service");
+})
+
 app.post("/",async (req,res)=>{
     
     let to=req.body.email;
     let time=req.body.time;
+    console.log(time)
     let subject=req.body.subject; 
 
 
@@ -31,14 +26,27 @@ app.post("/",async (req,res)=>{
     else if(time.includes("hour later"))
     {
         let val=+time.replace(" hour later","").trim();
-        console.log(val,typeof val);
         setTimeout(()=>sendthemail(to,subject),val*3600*1000)
 
     }
     else 
     {
-        // "21st march,2022,6:00 AM " to March 11, 2022, 11:40 PM
-        let date = time;
+        let abs = getTimeInMs(time)
+        setTimeout(()=>sendthemail(to,subject),abs);
+    }
+    
+    res.status(201).send("Mail has been sent or will be sent to your requested email on your requested time");
+})
+
+// to make a server
+const port = process.env.PORT || 1234;
+app.listen(port,async ()=>{   
+console.log("Listening at port 1234");
+});
+
+function getTimeInMs(time)
+{
+    let date = time;
             // date to be converted
         let day = "";
         for (let i = 0; i < date.length; i++) {
@@ -49,6 +57,7 @@ app.post("/",async (req,res)=>{
         }
         let str = date.split(",");
         let month = str[0].split(" ")[1];
+       
         month = month.charAt(0).toUpperCase() + month.slice(1);
 
         // year
@@ -57,31 +66,12 @@ app.post("/",async (req,res)=>{
         let time2 = str[2];
         // now makeing a string like that March 11, 2022, 11:40 PM
         let final = month + " " + day + ", " + year + ", " + time2;
+        
         // date in ms
         let dateInMs = new Date(final).getTime();
-        console.log(dateInMs);
+        
         let today_date=new Date().getTime();
         let abs=Math.abs(dateInMs-today_date)
-        console.log(abs);
-        setTimeout(()=>sendthemail(to,subject),abs);
-    }
-    
-    res.status(201).send("Hi everyone");
-})
-
-// to make a server
-const port = process.env.PORT || 1234;
-app.listen(port,async ()=>{   
-console.log("Listening at port 1234");
-});
-
-// send the mail
-const sendthemail=async function (to,subject)
-{   
-    await transporter.sendMail({
-        from: 'agarwalr327@gmail.com',
-        to: to,
-        subject: subject+"  Rahul Agarwal",
-        html: "hey this is test email"
-    });
+        console.log(`Your mail will be sent after ${abs/1000} second`);
+        return abs;
 }
